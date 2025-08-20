@@ -1,46 +1,25 @@
-name: CI/CD Pipeline
-
+name: Go
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: ["new_workflow"]
 
 jobs:
-  test:
+
+  build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+    - name: Build
+      run: go build -v ./...
 
-    - name: Install dependencies
-      run: npm install
-
-    - name: Run tests
-      run: npm test
-
-  docker-publish:
+  tests:
+    needs: build
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest .
-
-    - name: Push Docker image
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
+    - name: Test
+      run: go test -v ./...
